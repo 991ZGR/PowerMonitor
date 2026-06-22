@@ -22,19 +22,4 @@
 | 双击托盘图标 | 恢复窗口 |
 | 右键托盘图标 | 显示窗口 / 退出 |
 
-## 技术栈
 
-- C# WPF (.NET 8.0)
-- LibreHardwareMonitorLib (CPU RAPL / GPU NVML)
-- 暗色玻璃态 UI + Viewbox 自适应缩放
-- 单文件发布
-
-## 兼容性
-
-| 组件 | 说明 |
-|------|------|
-| Intel CPU (6代+) | ✅ CPU Package / Cores / DRAM |
-| AMD CPU (Zen+) | ✅ Package / Core / SOC |
-| NVIDIA GPU | ✅ GPU Power (NVML) |
-| AMD GPU | ✅ GPU Power (ADL) |
-| 主板/内存/硬盘 | ⚠️ 部分型号支持 |
