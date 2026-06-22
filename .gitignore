@@ -9,6 +9,8 @@ obj/
 
 ## Release outputs
 release/
+publish_output/
+publish_selfcontained/
 
 ## NuGet
 packages/

@@ -64,18 +64,22 @@ public sealed class SensorMonitor : IDisposable
             Thread.Sleep(250);
         }
 
-        // Log hardware info + capture names
+        // Log hardware info + capture names (prefer dGPU over iGPU)
         foreach (var hw in _computer.Hardware)
         {
             debug.AppendLine($"[LHM] {hw.HardwareType}: {hw.Name}");
-            if (hw.HardwareType == HardwareType.Cpu)
+            if (hw.HardwareType == HardwareType.Cpu && string.IsNullOrEmpty(_cpuName))
                 _cpuName = hw.Name;
-            if (hw.HardwareType is HardwareType.GpuNvidia or HardwareType.GpuAmd or HardwareType.GpuIntel)
-                _gpuName = hw.Name;
+            if (hw.HardwareType == HardwareType.GpuNvidia || hw.HardwareType == HardwareType.GpuAmd)
+                _gpuName = hw.Name;  // dGPU takes priority
+            else if (hw.HardwareType == HardwareType.GpuIntel && string.IsNullOrEmpty(_gpuName))
+                _gpuName = hw.Name;  // iGPU only if no dGPU found
             foreach (var sub in hw.SubHardware)
             {
                 debug.AppendLine($"  └─ {sub.HardwareType}: {sub.Name}");
-                if (sub.HardwareType is HardwareType.GpuNvidia or HardwareType.GpuAmd or HardwareType.GpuIntel)
+                if (sub.HardwareType == HardwareType.GpuNvidia || sub.HardwareType == HardwareType.GpuAmd)
+                    _gpuName = sub.Name;
+                else if (sub.HardwareType == HardwareType.GpuIntel && string.IsNullOrEmpty(_gpuName))
                     _gpuName = sub.Name;
             }
         }
@@ -126,6 +130,9 @@ public sealed class SensorMonitor : IDisposable
         // --- LHM sensors ---
         float lhmCpu = 0f, lhmGpu = 0f, lhmOther = 0f;
         bool hasCpu = false, hasGpu = false, hasOther = false;
+        // Separate GPU power by type: prefer dGPU over iGPU
+        float gpuNvidia = 0f, gpuAmd = 0f, gpuIntel = 0f;
+        bool hasNvidia = false, hasAmd = false, hasIntel = false;
 
         try
         {
@@ -133,14 +140,23 @@ public sealed class SensorMonitor : IDisposable
 
             foreach (var hw in _computer.Hardware)
             {
-                CollectPower(hw, ref lhmCpu, ref lhmGpu, ref lhmOther,
-                             ref hasCpu, ref hasGpu, ref hasOther);
+                CollectPowerSeparate(hw, ref lhmCpu,
+                    ref gpuNvidia, ref gpuAmd, ref gpuIntel,
+                    ref lhmOther, ref hasCpu,
+                    ref hasNvidia, ref hasAmd, ref hasIntel, ref hasOther);
                 foreach (var sub in hw.SubHardware)
-                    CollectPower(sub, ref lhmCpu, ref lhmGpu, ref lhmOther,
-                                 ref hasCpu, ref hasGpu, ref hasOther);
+                    CollectPowerSeparate(sub, ref lhmCpu,
+                        ref gpuNvidia, ref gpuAmd, ref gpuIntel,
+                        ref lhmOther, ref hasCpu,
+                        ref hasNvidia, ref hasAmd, ref hasIntel, ref hasOther);
             }
         }
         catch { }
+
+        // Prefer dGPU: NVIDIA > AMD > Intel (iGPU)
+        if (hasNvidia) { lhmGpu = gpuNvidia; hasGpu = true; }
+        else if (hasAmd) { lhmGpu = gpuAmd; hasGpu = true; }
+        else if (hasIntel) { lhmGpu = gpuIntel; hasGpu = true; }
 
         // --- nvidia-smi fallback for GPU ---
         if (!hasGpu)
@@ -179,67 +195,56 @@ public sealed class SensorMonitor : IDisposable
         DataUpdated?.Invoke(data);
     }
 
-    private static void CollectPower(
+    private static void CollectPowerSeparate(
         IHardware hw,
-        ref float cpu, ref float gpu, ref float other,
-        ref bool hasCpu, ref bool hasGpu, ref bool hasOther)
+        ref float cpu,
+        ref float gpuNvidia, ref float gpuAmd, ref float gpuIntel,
+        ref float other,
+        ref bool hasCpu,
+        ref bool hasNvidia, ref bool hasAmd, ref bool hasIntel, ref bool hasOther)
     {
-        // For CPU: only use the highest-level sensor (Package), not sub-sensors
-        // which are already included in Package. If no Package sensor, then sum all.
+        // For CPU: only use Package sensor to avoid double-counting
         if (hw.HardwareType == HardwareType.Cpu)
         {
-            float pkgVal = 0;
             bool hasPkg = false;
-            float sumOthers = 0;
-            bool hasOthers = false;
-
             foreach (var sensor in hw.Sensors)
             {
-                if (sensor.SensorType != SensorType.Power || !sensor.Value.HasValue)
-                    continue;
+                if (sensor.SensorType != SensorType.Power || !sensor.Value.HasValue) continue;
                 float val = sensor.Value.Value;
                 if (val < 0) continue;
-
                 if (sensor.Name.Contains("Package", StringComparison.OrdinalIgnoreCase))
                 {
-                    pkgVal = val;
-                    hasPkg = true;
+                    cpu += val; hasCpu = true; hasPkg = true;
                 }
-                else
+            }
+            if (!hasPkg) // fallback: sum all CPU power sensors
+            {
+                foreach (var sensor in hw.Sensors)
                 {
-                    // Collect non-Package sensors as fallback
-                    sumOthers += val;
-                    hasOthers = true;
+                    if (sensor.SensorType != SensorType.Power || !sensor.Value.HasValue) continue;
+                    float val = sensor.Value.Value;
+                    if (val < 0) continue;
+                    cpu += val; hasCpu = true;
                 }
-            }
-
-            if (hasPkg)
-            {
-                cpu += pkgVal;
-                hasCpu = true;
-            }
-            else if (hasOthers)
-            {
-                cpu += sumOthers;
-                hasCpu = true;
             }
             return;
         }
 
-        // For non-CPU hardware: sum all power sensors
+        // For non-CPU: collect by type
         foreach (var sensor in hw.Sensors)
         {
-            if (sensor.SensorType != SensorType.Power || !sensor.Value.HasValue)
-                continue;
+            if (sensor.SensorType != SensorType.Power || !sensor.Value.HasValue) continue;
             float val = sensor.Value.Value;
             if (val < 0) continue;
 
             switch (hw.HardwareType)
             {
                 case HardwareType.GpuNvidia:
+                    gpuNvidia += val; hasNvidia = true; break;
                 case HardwareType.GpuAmd:
+                    gpuAmd += val; hasAmd = true; break;
                 case HardwareType.GpuIntel:
-                    gpu += val; hasGpu = true; break;
+                    gpuIntel += val; hasIntel = true; break;
                 default:
                     other += val; hasOther = true; break;
             }
