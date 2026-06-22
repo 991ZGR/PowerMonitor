@@ -1,0 +1,255 @@
+﻿<Window x:Class="PowerMonitor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="PowerMonitor"
+        MinWidth="440" MinHeight="380"
+        Width="520" Height="480"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource BgDarkBrush}"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CornerRadius="10" GlassFrameThickness="0" CaptionHeight="0" ResizeBorderThickness="4"/>
+    </WindowChrome.WindowChrome>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="34"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ═══ Title Bar ═══ -->
+        <Grid Grid.Row="0" Background="Transparent"
+              MouseLeftButtonDown="TitleBar_MouseDown">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal"
+                        Margin="12,0,0,0" VerticalAlignment="Center">
+                <Ellipse Width="8" Height="8" Fill="{StaticResource AccentCyanBrush}" VerticalAlignment="Center">
+                    <Ellipse.Effect>
+                        <DropShadowEffect BlurRadius="8" Opacity="0.8" ShadowDepth="0" Color="{StaticResource AccentCyan}"/>
+                    </Ellipse.Effect>
+                </Ellipse>
+                <TextBlock Text="  POWER MONITOR" FontSize="10" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextSecondaryBrush}"
+                           FontFamily="Segoe UI" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <Grid Grid.Column="1"/>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="0,0,6,0">
+                <Button x:Name="SpeedBtn" Content="⚡" Width="26" Height="20"
+                        FontSize="10" FontWeight="Bold"
+                        Background="Transparent" Foreground="{StaticResource TextSecondaryBrush}"
+                        BorderThickness="0" Cursor="Hand"
+                        Click="SpeedBtn_Click"
+                        ToolTip="刷新速度：中">
+                    <Button.ContextMenu>
+                        <ContextMenu x:Name="SpeedMenu" Background="#1A1A2E" Foreground="#F0F0FF">
+                            <MenuItem x:Name="SpeedInsane" Header="🔥 疯狂 (10ms)" IsCheckable="True"
+                                      Click="SpeedMenu_Click" Tag="0"/>
+                            <MenuItem x:Name="SpeedUltra" Header="🚀 极速 (100ms)" IsCheckable="True"
+                                      Click="SpeedMenu_Click" Tag="1"/>
+                            <MenuItem x:Name="SpeedFast" Header="⚡ 快 (500ms)" IsCheckable="True"
+                                      Click="SpeedMenu_Click" Tag="2"/>
+                            <MenuItem x:Name="SpeedMedium" Header="⏱ 中 (1000ms)" IsCheckable="True"
+                                      IsChecked="True" Click="SpeedMenu_Click" Tag="3"/>
+                            <MenuItem x:Name="SpeedSlow" Header="🐢 慢 (2000ms)" IsCheckable="True"
+                                      Click="SpeedMenu_Click" Tag="4"/>
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+                <Button x:Name="OverlayToggle" Content="P" Width="26" Height="20"
+                        FontSize="9" FontWeight="Bold"
+                        Background="Transparent" Foreground="{StaticResource TextSecondaryBrush}"
+                        BorderThickness="0" Cursor="Hand"
+                        Click="OverlayToggle_Click"
+                        ToolTip="切换右上角叠加层"/>
+                <Button x:Name="MinimizeBtn" Content="—" Width="26" Height="20"
+                        FontSize="11" FontWeight="Bold"
+                        Background="Transparent" Foreground="{StaticResource TextSecondaryBrush}"
+                        BorderThickness="0" Cursor="Hand"
+                        Click="Minimize_Click"/>
+                <Button x:Name="CloseBtn" Content="✕" Width="26" Height="20"
+                        FontSize="9" FontWeight="Bold"
+                        Background="Transparent" Foreground="{StaticResource TextSecondaryBrush}"
+                        BorderThickness="0" Cursor="Hand"
+                        Click="Close_Click"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ═══ Main content (Viewbox = auto-scale) ═══ -->
+        <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="Both"
+                 Margin="8,0,8,8">
+            <Grid Width="500" Height="420">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="10"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- ── Total Power Card ── -->
+                <Border Grid.Row="0" Style="{StaticResource CardBorder}"
+                        Height="200" BorderBrush="#33FFFFFF">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Text="总功耗 / TOTAL POWER"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="{StaticResource TextDimBrush}"
+                                   HorizontalAlignment="Center" Margin="0,14,0,0"/>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center">
+                            <TextBlock x:Name="TotalPowerText" Text="—"
+                                       FontSize="96" FontWeight="Light"
+                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                       FontFamily="Segoe UI"
+                                       Effect="{StaticResource CyanGlow}"/>
+                            <TextBlock Text="W" FontSize="32" FontWeight="Light"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       VerticalAlignment="Bottom" Margin="4,0,0,14"
+                                       FontFamily="Segoe UI"/>
+                        </StackPanel>
+
+                        <TextBlock x:Name="StatusText" Grid.Row="2"
+                                   Text="正在检测传感器..."
+                                   FontSize="10"
+                                   Foreground="{StaticResource TextDimBrush}"
+                                   HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                    </Grid>
+                </Border>
+
+                <!-- ── GPU / CPU / Other cards ── -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- GPU -->
+                    <Border Grid.Column="0" Style="{StaticResource CardBorder}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="GPU"
+                                       Style="{StaticResource SubLabel}" Margin="0,10,0,0"/>
+                            <TextBlock x:Name="GpuNameText" Grid.Row="1"
+                                       Text="" FontSize="8"
+                                       Foreground="{StaticResource TextDimBrush}"
+                                       HorizontalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="140"
+                                       Margin="6,2,6,0"/>
+                            <StackPanel Grid.Row="2" Orientation="Horizontal"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock x:Name="GpuPowerText" Text="—"
+                                           FontSize="32" FontWeight="Medium"
+                                           Foreground="{StaticResource AccentOrangeBrush}"
+                                           FontFamily="Segoe UI"
+                                           Effect="{StaticResource OrangeGlow}"/>
+                                <TextBlock Text="W" FontSize="13" FontWeight="Medium"
+                                           Foreground="{StaticResource AccentOrangeBrush}"
+                                           VerticalAlignment="Bottom" Margin="2,0,0,4"/>
+                            </StackPanel>
+                            <TextBlock x:Name="GpuStatus" Grid.Row="3"
+                                       Text="等待检测"
+                                       Style="{StaticResource SubLabel}" Margin="0,0,0,8"
+                                       FontSize="9"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- CPU -->
+                    <Border Grid.Column="2" Style="{StaticResource CardBorder}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="CPU"
+                                       Style="{StaticResource SubLabel}" Margin="0,10,0,0"/>
+                            <TextBlock x:Name="CpuNameText" Grid.Row="1"
+                                       Text="" FontSize="8"
+                                       Foreground="{StaticResource TextDimBrush}"
+                                       HorizontalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       MaxWidth="140"
+                                       Margin="6,2,6,0"/>
+                            <StackPanel Grid.Row="2" Orientation="Horizontal"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock x:Name="CpuPowerText" Text="—"
+                                           FontSize="32" FontWeight="Medium"
+                                           Foreground="{StaticResource AccentPurpleBrush}"
+                                           FontFamily="Segoe UI"
+                                           Effect="{StaticResource PurpleGlow}"/>
+                                <TextBlock Text="W" FontSize="13" FontWeight="Medium"
+                                           Foreground="{StaticResource AccentPurpleBrush}"
+                                           VerticalAlignment="Bottom" Margin="2,0,0,4"/>
+                            </StackPanel>
+                            <TextBlock x:Name="CpuStatus" Grid.Row="3"
+                                       Text="等待检测"
+                                       Style="{StaticResource SubLabel}" Margin="0,0,0,8"
+                                       FontSize="9"/>
+                        </Grid>
+                    </Border>
+
+                    <!-- Other -->
+                    <Border Grid.Column="4" Style="{StaticResource CardBorder}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Text="其他"
+                                       Style="{StaticResource SubLabel}" Margin="0,10,0,0"/>
+                            <StackPanel Grid.Row="1" Orientation="Horizontal"
+                                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <TextBlock x:Name="OtherPowerText" Text="—"
+                                           FontSize="32" FontWeight="Medium"
+                                           Foreground="{StaticResource AccentGreenBrush}"
+                                           FontFamily="Segoe UI"
+                                           Effect="{StaticResource GreenGlow}"/>
+                                <TextBlock Text="W" FontSize="13" FontWeight="Medium"
+                                           Foreground="{StaticResource AccentGreenBrush}"
+                                           VerticalAlignment="Bottom" Margin="2,0,0,4"/>
+                            </StackPanel>
+                            <TextBlock x:Name="OtherStatus" Grid.Row="2"
+                                       Text="等待检测"
+                                       Style="{StaticResource SubLabel}" Margin="0,0,0,8"
+                                       FontSize="9"/>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- ── Bottom info bar ── -->
+                <TextBlock x:Name="InfoBar" Grid.Row="3"
+                           Text="" FontSize="9"
+                           Foreground="{StaticResource TextDimBrush}"
+                           HorizontalAlignment="Center"
+                           Margin="0,8,0,0"/>
+            </Grid>
+        </Viewbox>
+    </Grid>
+</Window>
