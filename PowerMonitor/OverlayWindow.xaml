@@ -1,9 +1,6 @@
 <Window x:Class="PowerMonitor.OverlayWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d"
         Title="Overlay"
         Width="180" Height="52"
         WindowStyle="None"
@@ -23,7 +20,7 @@
     </WindowChrome.WindowChrome>
 
     <Grid>
-        <Border CornerRadius="8" Background="#CC0A0A14"
+        <Border x:Name="MainBorder" CornerRadius="8" Background="#CC0A0A14"
                 BorderThickness="1"
                 Padding="12,8,14,8">
             <Border.BorderBrush>
@@ -39,12 +36,9 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Power icon dot -->
                 <Ellipse Grid.Column="0" Width="6" Height="6"
-                         VerticalAlignment="Center" Margin="0,0,8,0">
-                    <Ellipse.Fill>
-                        <SolidColorBrush Color="{StaticResource AccentCyan}"/>
-                    </Ellipse.Fill>
+                         VerticalAlignment="Center" Margin="0,0,8,0"
+                         Fill="{DynamicResource AccentCyanBrush}">
                     <Ellipse.Effect>
                         <DropShadowEffect BlurRadius="10" Opacity="0.9" ShadowDepth="0"
                                           Color="{StaticResource AccentCyan}"/>

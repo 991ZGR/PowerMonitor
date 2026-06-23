@@ -173,4 +173,39 @@ public partial class MainWindow : Window
             OverlayToggle.Foreground = (SolidColorBrush)FindResource("AccentCyanBrush");
         }
     }
+
+    private void OverlaySettings_Click(object sender, RoutedEventArgs e)
+    {
+        bool vis = OverlayPanel.Visibility == Visibility.Visible;
+        OverlayPanel.Visibility = vis ? Visibility.Collapsed : Visibility.Visible;
+        OverlayPanel.Height = vis ? 0 : double.NaN;
+    }
+
+    private void SliderOffsetX_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        double val = Math.Round(e.NewValue, 0);
+        SliderOffsetXVal.Text = val.ToString();
+        _overlay?.SetOffsetX(val);
+    }
+
+    private void SliderOffsetY_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        double val = Math.Round(e.NewValue, 0);
+        SliderOffsetYVal.Text = val.ToString();
+        _overlay?.SetOffsetY(val);
+    }
+
+    private void SliderScale_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        double val = Math.Round(e.NewValue, 1);
+        SliderScaleVal.Text = val.ToString("F1");
+        _overlay?.SetScale(val);
+    }
+
+    private void SliderOpacity_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
+    {
+        double val = Math.Round(e.NewValue, 2);
+        SliderOpacityVal.Text = val.ToString("F2");
+        if (_overlay != null) _overlay.Opacity = val;
+    }
 }
