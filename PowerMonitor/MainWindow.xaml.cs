@@ -10,10 +10,12 @@ public partial class MainWindow : Window
 {
     private readonly SensorMonitor _monitor = new();
     private OverlayWindow? _overlay;
+    private bool _loaded;
 
     public MainWindow()
     {
         InitializeComponent();
+        _loaded = true;
         _monitor.DataUpdated += OnDataUpdated;
         _monitor.Start();
     }
@@ -183,6 +185,7 @@ public partial class MainWindow : Window
 
     private void SliderOffsetX_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
+        if (!_loaded) return;
         double val = Math.Round(e.NewValue, 0);
         SliderOffsetXVal.Text = val.ToString();
         _overlay?.SetOffsetX(val);
@@ -190,6 +193,7 @@ public partial class MainWindow : Window
 
     private void SliderOffsetY_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
+        if (!_loaded) return;
         double val = Math.Round(e.NewValue, 0);
         SliderOffsetYVal.Text = val.ToString();
         _overlay?.SetOffsetY(val);
@@ -197,6 +201,7 @@ public partial class MainWindow : Window
 
     private void SliderScale_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
+        if (!_loaded) return;
         double val = Math.Round(e.NewValue, 1);
         SliderScaleVal.Text = val.ToString("F1");
         _overlay?.SetScale(val);
@@ -204,6 +209,7 @@ public partial class MainWindow : Window
 
     private void SliderOpacity_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
+        if (!_loaded) return;
         double val = Math.Round(e.NewValue, 2);
         SliderOpacityVal.Text = val.ToString("F2");
         if (_overlay != null) _overlay.Opacity = val;
