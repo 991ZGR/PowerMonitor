@@ -94,7 +94,7 @@
         <!-- ═══ Main content (Viewbox = auto-scale) ═══ -->
         <Viewbox Grid.Row="1" Stretch="Uniform" StretchDirection="Both"
                  Margin="8,0,8,8">
-            <Grid Width="500" Height="420">
+            <Grid Width="500" Height="560">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="10"/>
